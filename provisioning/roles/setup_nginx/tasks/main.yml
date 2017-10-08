@@ -1,11 +1,5 @@
 ---
 
-
-- name: Config proxy apt
-  copy:
-   src: apt.conf
-   dest: /etc/apt
-
 - name: Ensure nginx installed
   apt: 
     name: nginx
@@ -30,16 +24,6 @@
     - '/var/www/html'
     - '/etc/nginx/sites-enabled/default'
     - '/etc/nginx/sites-available/default'
-
-
-#- name: Generate certificate
-#  openssl_certificate:
-#    path: /etc/nginx/ssl/sentry_self.crt
-#    privatekey_path: /etc/nginx/ssl/sentry_key.key
-#    csr_path: /etc/nginx/ssl/sentry.csr
-#    provider: selfsigned
-#  ignore_error: true
-
 
 - name: Generate certificate by command
   command: | 

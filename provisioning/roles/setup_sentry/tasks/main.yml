@@ -1,10 +1,9 @@
 ---
 
-- name: Ensure packages installed
+- name: Install sentry packages
   apt:
     name: "{{ item }}"
     state: present
-    allow_unauthenticated: true
   with_items:
     - python-dev
     - python-pip
@@ -17,29 +16,23 @@
     - libssh-dev
     - supervisor
 
-
-#- name: Add redis repository
-#  shell: sudo -E add-apt-repository ppa:chris-lea/redis-server 
-#  environment:
-#    https_proxy: "{{ https_proxy }}" 
+- name: Add redis repository
+  apt_repository:
+    repo: 'ppa:chris-lea/redis-server' 
+  environment:
+    https_proxy: "{{ https_proxy }}" 
 
 - name: Install redis
-  pip:
-    name: redis
-    version: 2.9.0
-    virtualenv: "{{ venv }}"
-  environment:
-    http_proxy: "http://192.168.20.63:8080"
-    https_proxy: "http://192.168.20.63:8080"
+  apt:
+    name: redis-server
+  
 
 - name: Create directory
   file:
-    path: "{{ item }}"
+    path: /var/sentry
     mode: 755
     state: directory
-  with_items:
-    - /var/sentry
-    - /etc/sentry
+
 
 - name: Create user sentry
   user:
@@ -59,9 +52,7 @@
     name: sentry[postgres]
     version: 8.5.1
     virtualenv: "{{ venv }}"
-  environment:
-    http_proxy: "http://192.168.20.63:8080"
-    https_proxy: "http://192.168.20.63:8080"
+
 
 - name: Configure sentry
   template:
