@@ -1,0 +1,71 @@
+---
+
+
+- name: Config proxy apt
+  copy:
+   src: apt.conf
+   dest: /etc/apt
+
+- name: Ensure nginx installed
+  apt: 
+    name: nginx
+    state: present
+  notify : 
+    - restart nginx
+  
+
+- name: Create ssl directory
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Delete old config
+  file: 
+    path: '{{ item }}'
+    state: absent
+  with_items:
+    - '/var/www/html'
+    - '/etc/nginx/sites-enabled/default'
+    - '/etc/nginx/sites-available/default'
+
+
+#- name: Generate certificate
+#  openssl_certificate:
+#    path: /etc/nginx/ssl/sentry_self.crt
+#    privatekey_path: /etc/nginx/ssl/sentry_key.key
+#    csr_path: /etc/nginx/ssl/sentry.csr
+#    provider: selfsigned
+#  ignore_error: true
+
+
+- name: Generate certificate by command
+  command: | 
+       openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=${ansible_fqdn}"
+       -days 3650 -keyout /etc/nginx/ssl/sentry_key.key 
+       -out /etc/nginx/ssl/sentry_self.crt -extensions v3_ca  creates=/etc/nginx/ssl/sentry_self.crt
+
+
+
+- name: Configure nginx
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dst }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - { src: ssl_nginx_conf.j2, dst: /etc/nginx/nginx.conf }
+    - { src: ssl_nginx_sentry.j2, dst: /etc/nginx/sites-available/ssl_nginx_sentry.conf }
+  notify:
+    - restart nginx
+
+- name: Activate sentry conf
+  file:
+    src: /etc/nginx/sites-available/ssl_nginx_sentry.conf
+    dest: /etc/nginx/sites-enabled/sentry_conf.conf
+    state: link
+
+

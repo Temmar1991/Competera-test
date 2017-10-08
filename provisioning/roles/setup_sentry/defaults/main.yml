@@ -1,0 +1,26 @@
+---
+#General
+venv: /var/sentry/virtual
+path_sentry: /etc/sentry
+https_proxy: "http://192.168.20.63:8080"
+
+
+#Database
+db_name: sentry
+db_user: postgres
+db_host: 'localhost'
+db_port: 5432
+
+
+#Rdis
+redis_host: '127.0.0.1'
+redis_port: 6379
+
+
+#WEB
+web_host: 'localhost'
+web_port: 9000
+
+#Superbisor
+super_conf_dir: /etc/supervisor
+supervisor_directory: '/www/sentry'

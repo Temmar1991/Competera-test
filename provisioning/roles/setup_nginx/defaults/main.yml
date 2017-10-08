@@ -1,0 +1,9 @@
+---
+
+nginx_user: www-data
+nginx_worker_processes: 2
+nginx_error_log: /var/log/nginx/sentry_error.log
+nginx_access_log: /var/log/nginx/sentry_access.log
+
+ssl_certificate: sentry_self.crt
+ssl_certificate_key: sentry_key.key

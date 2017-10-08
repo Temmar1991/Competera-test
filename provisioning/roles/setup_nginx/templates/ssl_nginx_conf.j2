@@ -1,0 +1,49 @@
+
+user {{ nginx_user }};
+worker_processes {{ nginx_worker_processes }};
+error_log {{ nginx_error_log }} info;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+   }
+
+
+http {
+    
+    include            /etc/nginx/mime.types;
+    default_type       application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '$http_user_agent" "$http_x_forwarded_for" "$request_body_file" $request_length $request_time "X-MSISDN:$http_x_msisdn"';
+
+    access_log  {{ nginx_access_log }}  main;
+
+    
+    #sendfile           on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    
+    #types_hash_max_size 2048;
+    
+    # use very aggressive timeouts
+    proxy_read_timeout 5s;
+    proxy_send_timeout 5s;
+    send_timeout 5s;
+    resolver_timeout 5s;
+    client_body_timeout 5s;
+
+    # buffer larger messages
+    client_max_body_size 5m;
+    client_body_buffer_size 100k;
+	 
+    # Load modular configuration files from the /etc/nginx/conf.d directory.
+    # See http://nginx.org/en/docs/ngx_core_module.html#include
+    # for more information.
+    
+    include /etc/nginx/sites-enabled/*;
+
+}
+

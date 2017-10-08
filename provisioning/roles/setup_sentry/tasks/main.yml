@@ -1,0 +1,118 @@
+---
+
+- name: Ensure packages installed
+  apt:
+    name: "{{ item }}"
+    state: present
+    allow_unauthenticated: true
+  with_items:
+    - python-dev
+    - python-pip
+    - libpq-dev
+    - libjpeg8-dev
+    - python-virtualenv
+    - libxml2-dev
+    - libxslt1-dev
+    - libffi-dev
+    - libssh-dev
+    - supervisor
+
+
+#- name: Add redis repository
+#  shell: sudo -E add-apt-repository ppa:chris-lea/redis-server 
+#  environment:
+#    https_proxy: "{{ https_proxy }}" 
+
+- name: Install redis
+  pip:
+    name: redis
+    version: 2.9.0
+    virtualenv: "{{ venv }}"
+  environment:
+    http_proxy: "http://192.168.20.63:8080"
+    https_proxy: "http://192.168.20.63:8080"
+
+- name: Create directory
+  file:
+    path: "{{ item }}"
+    mode: 755
+    state: directory
+  with_items:
+    - /var/sentry
+    - /etc/sentry
+
+- name: Create user sentry
+  user:
+    home: /var/sentry/home
+    name: sentry
+    state: present
+
+- name: Change owner of directory
+  file:
+    path: /var/sentry
+    group: sentry
+    owner: sentry
+    mode: 744
+      
+- name: install sentry
+  pip:
+    name: sentry[postgres]
+    version: 8.5.1
+    virtualenv: "{{ venv }}"
+  environment:
+    http_proxy: "http://192.168.20.63:8080"
+    https_proxy: "http://192.168.20.63:8080"
+
+- name: Configure sentry
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - { src: sentry_conf_py.j2, dest: /etc/sentry/sentry.conf.py  }
+    - { src: sentry_conf.j2, dest: /etc/sentry/config.yml }
+   
+
+- name: Update db
+  command: '{{ venv }}/bin/sentry upgrade --noinput' 
+  environment:
+    SENTRY_CONF: /etc/sentry
+  register: result
+  changed_when: "result.stdout.find('Migrating forwards') != -1"
+  
+
+- name: Create user sentry
+  command: '{{ venv }}/bin/sentry createuser --email temmar@ukr.net --password zaqwsx --superuser'
+  environment:
+    SENTRY_CONF: /etc/sentry
+  ignore_errors: true
+  run_once: true
+  when: result|changed
+
+- name: check sentry process
+  shell: netstat -nap | grep 9000 | wc -l
+  register: proc
+ 
+
+- name: Run sentry backend
+  shell: '{{ venv }}/bin/sentry run web &'
+  environment:
+    SENTRY_CONF: /etc/sentry
+  when: proc.stdout|int == 0 
+
+- name: Run workers
+  shell: '{{ venv }}/bin/sentry run workeri &'
+  environment:
+    SENTRY_CONF: /etc/sentry
+  become: true
+  become_user: sentry
+  when: proc.stdout|int == 0
+
+- name: Configure supervisor
+  template:
+    src: supervisor.j2
+    dest: "{{ super_conf_dir }}/sentry_supervisor.conf"
+  notify: 
+    - restart supervisor

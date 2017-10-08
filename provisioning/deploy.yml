@@ -1,0 +1,9 @@
+---
+
+- hosts: all
+  become: yes
+  become_method: sudo
+  roles:
+     - setup_nginx
+     - setup_postgres
+     - setup_sentry

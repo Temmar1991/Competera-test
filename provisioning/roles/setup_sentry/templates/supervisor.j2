@@ -1,0 +1,29 @@
+[program:sentry-web]
+directory={{ supervisor_directory }}
+environment=SENTRY_CONF="/etc/sentry"
+command={{ venv }}/sentry start
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=syslog
+stderr_logfile=syslog
+
+[program:sentry-worker]
+directory={{ supervisor_directory }}
+environment=SENTRY_CONF="/etc/sentry"
+command={{ venv }}/sentry run worker
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=syslog
+stderr_logfile=syslog
+
+[program:sentry-cron]
+directory={{ supervisor_directory }}
+environment=SENTRY_CONF="/etc/sentry"
+command={{ venv }}/sentry run cron
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=syslog
+stderr_logfile=syslog
